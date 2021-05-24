@@ -1,0 +1,225 @@
+NAME: app
+LAST DEPLOYED: Mon May 24 15:27:38 2021
+NAMESPACE: default
+STATUS: pending-install
+REVISION: 1
+HOOKS:
+---
+# Source: laravel-app/templates/tests/test-connection.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "app-laravel-app-test-connection"
+  labels:
+    helm.sh/chart: laravel-app-0.1.0
+    app.kubernetes.io/name: laravel-app
+    app.kubernetes.io/instance: app
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    "helm.sh/hook": test
+spec:
+  containers:
+    - name: wget
+      image: busybox
+      command: ['wget']
+      args: ['app-laravel-app:80']
+  restartPolicy: Never
+MANIFEST:
+---
+# Source: laravel-app/templates/serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: app-laravel-app
+  labels:
+    helm.sh/chart: laravel-app-0.1.0
+    app.kubernetes.io/name: laravel-app
+    app.kubernetes.io/instance: app
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: Helm
+---
+# Source: laravel-app/templates/secret.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: app-auth
+data:
+  DB_ENV_PORT: "OTA5MA=="
+  DB_ENV_DATABASE: "ZXhlcmNpY2lv"
+  DB_ENV_USERNAME: "cm9vdA=="
+  DB_ENV_PASSWORD: "MTIzNDEyMzQ="
+---
+# Source: laravel-app/templates/configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-configmap
+data:
+  nginx.conf: |
+    
+    server {
+        listen  80;
+    
+        root /usr/share/nginx/blog/public;
+        index index.php index.html index.htm;
+    
+        location / {
+            try_files $uri $uri/ /index.php?q=$uri&$args;
+        }
+    
+        location ~ ^/.+\.php(/|$) {
+            fastcgi_pass php_fpm:9000;
+            include fastcgi_params;
+            fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+        }
+    }
+---
+# Source: laravel-app/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: app-laravel-app
+  labels:
+    helm.sh/chart: laravel-app-0.1.0
+    app.kubernetes.io/name: laravel-app
+    app.kubernetes.io/instance: app
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: laravel-app
+    app.kubernetes.io/instance: app
+---
+# Source: laravel-app/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app-laravel-app
+  labels:
+    helm.sh/chart: laravel-app-0.1.0
+    app.kubernetes.io/name: laravel-app
+    app.kubernetes.io/instance: app
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: laravel-app
+      app.kubernetes.io/instance: app
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: laravel-app
+        app.kubernetes.io/instance: app
+    spec:
+      serviceAccountName: app-laravel-app
+      securityContext:
+        {}
+      containers:
+        - name: laravel-app-app
+          securityContext:
+            {}
+          image: "gabrielknot/lucas_dantas_laravel_app:latest"
+          imagePullPolicy: IfNotPresent
+          env:          
+            - name: "DB_ENV_PORT"
+              valueFrom:
+                secretKeyRef:
+                  key: DB_ENV_PORT 
+                  name: app-auth
+            - name: "DB_ENV_DATABASE"
+              valueFrom:
+                secretKeyRef:
+                  key: DB_ENV_DATABASE 
+                  name: app-auth
+            - name: "DB_ENV_USERNAME"
+              valueFrom:
+                secretKeyRef:
+                  key: DB_ENV_USERNAME 
+                  name: app-auth
+            - name: "DB_ENV_PASSWORD"
+              valueFrom:
+                secretKeyRef:
+                  key: DB_ENV_PASSWORD 
+                  name: app-auth
+          ports:
+            - name: http
+              containerPort: 9000
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+          resources:
+            {}
+        - name: laravel-app-nginx
+          securityContext:
+            {}
+          image: "nginx:latest"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+          volumeMounts:
+            - mountPath: /etc/nginx # mount nginx-conf volumn to /etc/nginx
+              readOnly: true
+              name: nginx-conf
+            - mountPath: /var/log/nginx
+              name: log
+          resources:
+            {}
+---
+# Source: laravel-app/templates/hpa.yaml
+apiVersion: autoscaling/v2beta1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: app-laravel-app
+  labels:
+    helm.sh/chart: laravel-app-0.1.0
+    app.kubernetes.io/name: laravel-app
+    app.kubernetes.io/instance: app
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: app-laravel-app
+  minReplicas: 1
+  maxReplicas: 100
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        targetAverageUtilization: 20
+    - type: Resource
+      resource:
+        name: memory
+        targetAverageUtilization: 20
+
+NOTES:
+1. Get the application URL by running these commands:
+  export POD_NAME=$(kubectl get pods --namespace default -l "app.kubernetes.io/name=laravel-app,app.kubernetes.io/instance=app" -o jsonpath="{.items[0].metadata.name}")
+  export CONTAINER_PORT=$(kubectl get pod --namespace default $POD_NAME -o jsonpath="{.spec.containers[0].ports[0].containerPort}")
+  echo "Visit http://127.0.0.1:8080 to use your application"
+  kubectl --namespace default port-forward $POD_NAME 8080:$CONTAINER_PORT

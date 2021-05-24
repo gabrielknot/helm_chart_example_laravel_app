@@ -43,7 +43,10 @@ securityContext: {}
   # readOnlyRootFilesystem: true
   # runAsNonRoot: true
   # runAsUser: 1000
-
+port: "9090"
+database: "exercicio"
+username: "root"
+password: "12341234"
 service:
   type: ClusterIP
   port: 80

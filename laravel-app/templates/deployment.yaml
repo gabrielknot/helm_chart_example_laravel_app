@@ -33,18 +33,31 @@ spec:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image_app.repository }}:{{ .Values.image_app.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image_app.pullPolicy }}
+          env:          
+            - name: "DB_ENV_PORT"
+              valueFrom:
+                secretKeyRef:
+                  key: DB_ENV_PORT 
+                  name: {{ .Release.Name }}-auth
+            - name: "DB_ENV_DATABASE"
+              valueFrom:
+                secretKeyRef:
+                  key: DB_ENV_DATABASE 
+                  name: {{ .Release.Name }}-auth
+            - name: "DB_ENV_USERNAME"
+              valueFrom:
+                secretKeyRef:
+                  key: DB_ENV_USERNAME 
+                  name: {{ .Release.Name }}-auth
+            - name: "DB_ENV_PASSWORD"
+              valueFrom:
+                secretKeyRef:
+                  key: DB_ENV_PASSWORD 
+                  name: {{ .Release.Name }}-auth
           ports:
             - name: http
               containerPort: 9000
               protocol: TCP
-          livenessProbe:
-            httpGet:
-              path: /
-              port: http
-          readinessProbe:
-            httpGet:
-              path: /
-              port: http
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
         - name: {{ .Chart.Name }}-nginx
@@ -64,26 +77,9 @@ spec:
             httpGet:
               path: /
               port: http
-          volumeMounts:
-            - mountPath: /etc/nginx # mount nginx-conf volumn to /etc/nginx
-              readOnly: true
-              name: nginx-conf
-            - mountPath: /var/log/nginx
-              name: log
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
       {{- with .Values.nodeSelector }}
-      volumes:
-        - name: nginx-conf
-          configMap:
-            name: nginx-conf # place ConfigMap `nginx-conf` on /etc/nginx
-            items:
-              - key: nginx.conf
-                path: nginx.conf
-              - key: virtualhost.conf
-                path: virtualhost/virtualhost.conf # dig directory
-        - name: log
-          emptyDir: {}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
       {{- end }}
