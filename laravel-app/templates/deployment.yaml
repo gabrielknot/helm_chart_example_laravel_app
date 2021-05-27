@@ -32,14 +32,23 @@ spec:
           configMap:
             name: {{ .Release.Name }}-nginx-configmap
             items:
-            - key: nginx.conf
-              path: nginx.conf
-        - name: {{ .Release.Name }}-php-configmap
-          configMap:
-            name: {{ .Release.Name }}-php-configmap
-            items:
-            - key: env
-              path: .env
+              - key: default.conf
+                path: default.conf
+                #- name: {{ .Release.Name }}-php-configmap
+                #  configMap:
+                #    name: {{ .Release.Name }}-php-configmap
+                #    items: 
+                #      - key: env
+                #        path: .env
+        - name: {{ .Release.Name }}-app-shared-data
+          emptyDir: {}
+      initContainers:
+        - name: configuring-laravel-app
+          image: "{{ .Values.image_app.repository }}:{{ .Values.image_app.tag | default .Chart.AppVersion }}"
+          volumeMounts:
+            - name: {{ .Release.Name }}-app-shared-data
+              mountPath: /var/www/html/
+          command: ["cp","-r","/usr/share/nginx/blog/","/var/www/html/","&&","php","artisan","config:cache","&&","php","artisan","migrate"]
       containers:
         - name: {{ .Chart.Name }}-app
           securityContext:
@@ -47,9 +56,8 @@ spec:
           image: "{{ .Values.image_app.repository }}:{{ .Values.image_app.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image_app.pullPolicy }}
           volumeMounts:
-            - name: {{ .Release.Name }}-php-configmap
-              mountPath: /usr/share/nginx/blog/.env
-              subPath: .env
+            - name: {{ .Release.Name }}-app-shared-data
+              mountPath: /var/www/html/
           ports:
             - name: http
               containerPort: 9000
@@ -63,9 +71,12 @@ spec:
           imagePullPolicy: {{ .Values.image_server.pullPolicy }}
           volumeMounts:
             - name: {{ .Release.Name }}-nginx-configmap
-              mountPath: /etc/nginx/nginx.conf
-              subPath: nginx.conf
+              mountPath: /etc/nginx/conf.d/default.conf
+              subPath: default.conf
               readOnly: true
+          volumeMounts:
+            - name: {{ .Release.Name }}-app-shared-data
+              mountPath: /var/www/html/
           ports:
             - name: http
               containerPort: 80
