@@ -4,18 +4,18 @@
 
 replicaCount: 1
 
-image_builder:
-  repository: garbielknot/php_laravel_builder
+image_debian:
+  repository: debian
   pullPolicy: Always
   # Overrides the image tag whose default is the chart appVersion.
 
   tag: "latest"
-image_app:
-  repository: gabrielknot/lucas_dantas_laravel_app
+image_php_cli:
+  repository: php
   pullPolicy: Always
   # Overrides the image tag whose default is the chart appVersion.
 
-  tag: "latest"
+  tag: "7.4-cli"
 
 image_server:
   repository: nginx
