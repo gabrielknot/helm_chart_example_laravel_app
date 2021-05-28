@@ -45,10 +45,13 @@ spec:
       initContainers:
         - name: configuring-laravel-app
           image: "{{ .Values.image_app.repository }}:{{ .Values.image_app.tag | default .Chart.AppVersion }}"
+          envFrom:
+            - configMapKeyRef:
+                name: {{ .Release.Name }}-php-configmap
           volumeMounts:
             - name: {{ .Release.Name }}-app-shared-data
               mountPath: /var/www/html/
-          command: ["cp","-r","/usr/share/nginx/blog/","/var/www/html/","&&","php","artisan","config:cache","&&","php","artisan","migrate"]
+          command: ["cp","-r","/usr/share/nginx/blog/","/var/www/html/","&&","cd","/var/www/html/","&&","php","artisan","config:cache","&&","php","artisan","migrate"]
       containers:
         - name: {{ .Chart.Name }}-app
           securityContext:
