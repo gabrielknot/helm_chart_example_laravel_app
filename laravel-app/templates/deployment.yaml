@@ -44,7 +44,7 @@ spec:
           emptyDir: {}
       initContainers:
         - name: creating-ephemeral-volume
-          image: "{{ .Values.image_debian.repository }}:{{ .Values.image_app.tag | default .Chart.AppVersion }}"
+          image: "{{ .Values.image_debian.repository }}"
           envFrom:
             - configMapRef:
                 name: {{ .Release.Name }}-php-configmap
