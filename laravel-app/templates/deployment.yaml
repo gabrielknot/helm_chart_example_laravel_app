@@ -50,17 +50,18 @@ spec:
                 name: {{ .Release.Name }}-php-configmap
           volumeMounts:
             - name: {{ .Release.Name }}-app-shared-data
-              mountPath: /var/www/html/
-          args: ["/bin/mv","/html","/var/www/"]
+              mountPath: /app
+          args: ["/bin/mv","/html/","/app/"]
         - name: config-cache
           image: "{{ .Values.image_php_cli.repository }}:{{ .Values.image_app.tag | default .Chart.AppVersion }}"
+          workingDir: /app/html
           envFrom:
             - configMapRef:
                 name: {{ .Release.Name }}-php-configmap
           volumeMounts:
             - name: {{ .Release.Name }}-app-shared-data
               mountPath: /app
-              #args: ["/bin/cd","/app","&&","php","artisan","config:cache"]
+          args: ["php","artisan","config:cache"]
               #(php artisan migrate || true) && 
               #(php artisan db:seed || true) && 
               #(php artisan route:cache || true) && 
