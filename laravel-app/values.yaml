@@ -23,6 +23,12 @@ image_server:
 
   tag: "latest"
 
+image_app:
+  repository: gabrielknot/lucas_dantas_laravel_app
+  pullPolicy: Always
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "latest"
+
 imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
