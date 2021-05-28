@@ -51,9 +51,11 @@ spec:
           volumeMounts:
             - name: {{ .Release.Name }}-app-shared-data
               mountPath: /var/www/html/
-          command: ["/bin/sh"]
-          args: ["-c","cp","-r","/app","/var/www/html/"]
-        - name: 
+          args: 
+            - /bin/bash
+            - -c
+            - 'cp -rf /app /var/www/html'
+        - name: config-cache
           image: "{{ .Values.image_php_cli.repository }}:{{ .Values.image_app.tag | default .Chart.AppVersion }}"
           envFrom:
             - configMapRef:
@@ -61,8 +63,19 @@ spec:
           volumeMounts:
             - name: {{ .Release.Name }}-app-shared-data
               mountPath: /app
-          command: ["/bin/sh"]
-          args: ["-c","cd","/app","&&","php","artisan","config:cache"]
+          args: ["-c",
+            - /bin/bash
+            - -c
+            - 'cd /app'
+            - &&
+            - (php artisan config:cache || true)
+              #(php artisan migrate || true) && 
+              #(php artisan db:seed || true) && 
+              #(php artisan route:cache || true) && 
+              #(php artisan view:cache || true) && 
+              #(cp -a /var/www/. /artisan-intimaai-web)
+              #- artisan
+              #- config:cache
           #- name: creating-ephemeral-volume
           #  image: "{{ .Values.image_php_cli.repository }}:{{ .Values.image_app.tag | default .Chart.AppVersion }}"
           #  envFrom:
