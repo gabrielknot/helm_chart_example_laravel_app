@@ -6,15 +6,14 @@ replicaCount: 1
 
 image_debian:
   repository: gabrielknot/volume
-  pullPolicy: Always
+  pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
 
 image_php_cli:
-  repository: php
-  pullPolicy: Always
+  repository: gabrielknot/complete_php_cli
+  pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-
-  tag: "7.4-cli"
+  tag: "latest"
 
 image_server:
   repository: nginx

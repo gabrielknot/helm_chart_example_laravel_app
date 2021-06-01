@@ -65,7 +65,7 @@ spec:
           volumeMounts:
             - name: {{ .Release.Name }}-app-shared-data
               mountPath: /app
-          args: ["php","artisan","config:cache"]
+          args: ["php","artisan","config:cache","&&","php","artisan","migrate"]
       containers:
         - name: {{ .Chart.Name }}-app
           securityContext:
