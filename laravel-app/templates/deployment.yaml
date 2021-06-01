@@ -57,7 +57,7 @@ spec:
               mountPath: /app
           args: ["/bin/mv","/html/","/app/"]
         - name: config-cache
-          image: "{{ .Values.image_php_cli.repository }}:{{ .Values.image_app.tag | default .Chart.AppVersion }}"
+          image: "{{ .Values.image_php_cli.repository }}"
           workingDir: /app/html
           envFrom:
             - configMapRef:

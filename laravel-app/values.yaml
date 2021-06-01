@@ -10,7 +10,7 @@ image_debian:
   # Overrides the image tag whose default is the chart appVersion.
 
 image_php_cli:
-  repository: gabrielknot/complete_php_cli
+  repository: gabrielknot/php_cli
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
   tag: "latest"
