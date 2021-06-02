@@ -54,18 +54,38 @@ spec:
                 name: {{ .Release.Name }}-php-configmap
           volumeMounts:
             - name: {{ .Release.Name }}-app-shared-data
-              mountPath: /app
-          args: ["/bin/mv","/html/","/app/"]
-        - name: config-cache
+              mountPath: /var
+          args: ["/bin/mv","/www/","/var/"]
+        - name: composer-install
           image: "{{ .Values.image_php_cli.repository }}"
-          workingDir: /app/html
+          workingDir: /var/www
           envFrom:
             - configMapRef:
                 name: {{ .Release.Name }}-php-configmap
           volumeMounts:
             - name: {{ .Release.Name }}-app-shared-data
-              mountPath: /app
-          args: ["composer","install","&&","php","artisan","config:cache","&&","php","artisan","migrate"]
+              mountPath: /var
+          args: ["composer","install"]
+        - name: config-cache
+          image: "{{ .Values.image_php_cli.repository }}"
+          workingDir: /var/www
+          envFrom:
+            - configMapRef:
+                name: {{ .Release.Name }}-php-configmap
+          volumeMounts:
+            - name: {{ .Release.Name }}-app-shared-data
+              mountPath: /var
+          args: ["php","artisan","config:cache"]
+        - name: migrate
+          image: "{{ .Values.image_php_cli.repository }}"
+          workingDir: /var/www
+          envFrom:
+            - configMapRef:
+                name: {{ .Release.Name }}-php-configmap
+          volumeMounts:
+            - name: {{ .Release.Name }}-app-shared-data
+              mountPath: /var
+          args: ["php","artisan","migrate"]
       containers:
         - name: {{ .Chart.Name }}-app
           securityContext:
@@ -78,8 +98,8 @@ spec:
               name: {{ .Release.Name }}-php-fpm-configmap
               readOnly: true
             - name: {{ .Release.Name }}-app-shared-data
-              mountPath: /app
-          workingDir: /app/html
+              mountPath: /var
+          workingDir: /var/www
           ports:
             - name: http
               containerPort: 9000
@@ -97,8 +117,8 @@ spec:
               name: {{ .Release.Name }}-nginx-configmap
               readOnly: true
             - name: {{ .Release.Name }}-app-shared-data
-              mountPath: /app
-          workingDir: /app/html
+              mountPath: /var
+          workingDir: /var/www
           ports:
             - name: http
               containerPort: 80
