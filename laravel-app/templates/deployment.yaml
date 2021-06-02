@@ -111,29 +111,7 @@ spec:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image_server.repository }}:{{ .Values.image_server.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image_server.pullPolicy }}
-          volumeMounts:
-            - name: {{ .Release.Name }}-nginx-configmap
-              mountPath: /etc/nginx/conf.d
-              name: {{ .Release.Name }}-nginx-configmap
-              readOnly: true
-            - name: {{ .Release.Name }}-app-shared-data
-              mountPath: /var
-          workingDir: /var/www
-          ports:
-            - name: http
-              containerPort: 80
-              protocol: TCP
-          livenessProbe:
-            httpGet:
-              path: /
-              port: http
-          readinessProbe:
-            httpGet:
-              path: /
-              port: http
-          resources:
-            {{- toYaml .Values.resources | nindent 12 }}
-            {{- with .Values.nodeSelector }}
+        {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
       {{- end }}
@@ -145,3 +123,4 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+
