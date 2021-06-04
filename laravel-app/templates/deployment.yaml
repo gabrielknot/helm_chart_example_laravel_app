@@ -54,52 +54,52 @@ spec:
                 name: {{ .Release.Name }}-php-configmap
           volumeMounts:
             - name: {{ .Release.Name }}-app-shared-data
-              mountPath: /var
-          args: ["/bin/mv","/www/","/var/"]
+              mountPath: /app
+          args: ["/bin/mv","/www/","/app/"]
         - name: composer-install
           image: "{{ .Values.image_php_cli.repository }}"
-          workingDir: /var/www
+          workingDir: /app/www
           envFrom:
             - configMapRef:
                 name: {{ .Release.Name }}-php-configmap
           volumeMounts:
             - name: {{ .Release.Name }}-app-shared-data
-              mountPath: /var
+              mountPath: /app
           args: ["composer","install"]
         - name: config-cache
           image: "{{ .Values.image_php_cli.repository }}"
-          workingDir: /var/www
+          workingDir: /app/www
           envFrom:
             - configMapRef:
                 name: {{ .Release.Name }}-php-configmap
           volumeMounts:
             - name: {{ .Release.Name }}-app-shared-data
-              mountPath: /var
+              mountPath: /app
           args: ["php","artisan","config:cache"]
         - name: migrate
           image: "{{ .Values.image_php_cli.repository }}"
-          workingDir: /var/www
+          workingDir: /app/www
           envFrom:
             - configMapRef:
                 name: {{ .Release.Name }}-php-configmap
           volumeMounts:
             - name: {{ .Release.Name }}-app-shared-data
-              mountPath: /var
+              mountPath: /app
           args: ["php","artisan","migrate"]
       containers:
-        - name: {{ .Chart.Name }}-app
+        - name: php-fpm
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image_app.repository }}:{{ .Values.image_app.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image_app.pullPolicy }}
           volumeMounts:
             - name: {{ .Release.Name }}-php-fpm-configmap
-              mountPath: etc/php-fpm.d
+              mountPath: /etc/php-fpm.d
               name: {{ .Release.Name }}-php-fpm-configmap
               readOnly: true
             - name: {{ .Release.Name }}-app-shared-data
-              mountPath: /var
-          workingDir: /var/www
+              mountPath: /app
+          workingDir: /app/www
           ports:
             - name: http
               containerPort: 9000
@@ -111,6 +111,17 @@ spec:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image_server.repository }}:{{ .Values.image_server.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image_server.pullPolicy }}
+          volumeMounts:
+            - name: {{ .Release.Name }}-nginx-configmap
+              mountPath: /etc/nginx/conf.d
+              name: {{ .Release.Name }}-nginx-configmap
+            - name: {{ .Release.Name }}-app-shared-data
+              mountPath: /app
+          workingDir: /app/www
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
         {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
