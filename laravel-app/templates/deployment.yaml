@@ -30,6 +30,11 @@ spec:
       volumes:
         - name: {{ .Release.Name }}-app-shared-data
           emptyDir: {}
+        - name: {{ .Release.Name }}-nginx-configmap
+          configMap:
+            defaultMode: 256
+            name: {{ .Release.Name }}-nginx-configmap
+            optional: false
       initContainers:
         - name: creating-ephemeral-volume
           image: "{{ .Values.image.repository }}"
@@ -66,6 +71,9 @@ spec:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           volumeMounts:
+            - name: {{ .Release.Name }}-nginx-configmap 
+              mountPath: /etc/nginx/conf.d
+              name: {{ .Release.Name }}-nginx-configmap
             - name: {{ .Release.Name }}-app-shared-data
               mountPath: /www
           workingDir: /www/app
