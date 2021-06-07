@@ -7,7 +7,7 @@ data:
     server {
             listen       80;
             listen       [::]:80;
-            root /app/www/public;
+            root /www/app/public;
             server_name  _;
             index index.php index.html index.htm;
             
