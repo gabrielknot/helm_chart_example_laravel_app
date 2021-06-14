@@ -1,0 +1,105 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app-laravel-app
+  labels:
+    helm.sh/chart: laravel-app-0.1.0
+    app.kubernetes.io/name: laravel-app
+    app.kubernetes.io/instance: test
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: laravel-app
+      app.kubernetes.io/instance: test
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: laravel-app
+        app.kubernetes.io/instance: test
+    spec:
+      serviceAccountName: test-laravel-app
+      securityContext:
+        {}
+      volumes:
+        - name: test-app-shared-data
+          emptyDir: {}
+        - name: test-nginx-configmap
+          configMap:
+            defaultMode: 256
+            name: test-nginx-configmap
+            optional: false
+        - name: test-php-fpm-configmap
+          configMap:
+            defaultMode: 256
+            name: test-php-fpm-configmap
+            optional: false
+      initContainers:
+       - name: creating-ephemeral-volume
+          image: "gabrielknot/php_nginx"
+          envFrom:
+            - configMapRef:
+                name: test-php-configmap
+          volumeMounts:
+            - name: test-app-shared-data
+              mountPath: /www
+          args: ["/bin/mv","/app","/www"]
+        - name: config-cache
+          image: "gabrielknot/php_nginx:latest"
+          volumeMounts:
+            - name: test-app-shared-data
+              mountPath: /www
+          workingDir: /www/app
+          envFrom:
+            - configMapRef:
+                name: test-php-configmap
+          args: ["php","artisan","config:cache"]
+        - name: migrate
+          image: "gabrielknot/php_nginx:latest"
+          volumeMounts:
+            - name: test-app-shared-data
+              mountPath: /www
+          workingDir: /www/app
+          envFrom:
+            - configMapRef:
+                name: test-php-configmap
+          args: ["php","artisan","migrate"]
+      containers:
+        - name: laravel-app
+          securityContext:
+            {}
+          image: "gabrielknot/php_nginx:latest"
+          volumeMounts:
+            - name: test-php-fpm-configmap 
+              mountPath: /usr/local/etc/php-fpm.d
+              name: test-php-fpm-configmap 
+            - name: test-nginx-configmap 
+              mountPath: /etc/nginx/conf.d
+              name: test-nginx-configmap 
+            - name: test-app-shared-data
+              mountPath: /www
+          workingDir: /www/app
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - configMapRef:
+                name: test-php-configmap
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+          resources:
+            limits:
+              cpu: 1000m
+              memory: 1000Mi
+            requests:
+              cpu: 400m
+              memory: 256Mi 
